@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Chat - Smart Campus Assistant{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="chat-header">🎓 Smart Campus Assistant</div>
+    <div class="chat-box" id="chat-box">
+        <div class="message ai-message">
+            Hello! I am your Smart Campus Assistant. Ask me about exams, room locations, or campus technical issues!
+        </div>
+    </div>
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="Type your question here..." onkeypress="handleKeyPress(event)">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+    async function sendMessage() {
+        const inputElement = document.getElementById("user-input");
+        const message = inputElement.value.trim();
+        if (!message) return;
+
+        // Clear input field and add user message
+        inputElement.value = "";
+        addMessageToUI(message, "user-message");
+
+        // 1. Show the typing indicator and save its ID
+        const typingId = addTypingIndicator();
+
+        try {
+            const response = await fetch("/ask", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ question: message })
+            });
+
+            const data = await response.json();
+            
+            // 2. Remove the typing indicator once data arrives
+            removeElement(typingId);
+            
+            // 3. Show the actual AI response
+            addMessageToUI(data.answer, "ai-message", data.category, data.response_time);
+
+        } catch (error) {
+            removeElement(typingId);
+            addMessageToUI("Error connecting to the server.", "ai-message");
+        }
+    }
+
+    // Helper function to create the bouncing dots
+    function addTypingIndicator() {
+        const chatBox = document.getElementById("chat-box");
+        const typingDiv = document.createElement("div");
+        const uniqueId = "typing-" + Date.now();
+        
+        typingDiv.id = uniqueId;
+        typingDiv.className = "typing-indicator";
+        typingDiv.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+        
+        chatBox.appendChild(typingDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        
+        return uniqueId;
+    }
+
+    // Helper function to remove an element by ID
+    function removeElement(id) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.remove();
+        }
+    }
+
+    function addMessageToUI(text, className, category="", time="") {
+        const chatBox = document.getElementById("chat-box");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `message ${className}`;
+        msgDiv.innerText = text;
+
+        if (category && time) {
+            const metaSpan = document.createElement("span");
+            metaSpan.className = "meta-data";
+            metaSpan.innerText = `[${category}] ⚡ ${time}`;
+            msgDiv.appendChild(metaSpan);
+        }
+
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === "Enter") {
+            sendMessage();
+        }
+    }
+</script>
+{% endblock %}

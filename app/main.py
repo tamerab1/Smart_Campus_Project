@@ -1,19 +1,27 @@
 # app/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 from app.routes import ask_route
-
-# Import the database engine and Base class
 from app.database import engine, Base
-# IMPORTANT: Import the models so SQLAlchemy knows about them before creating tables
-from app.models import campus 
+import app.models.campus 
 
-# This is the magic line that creates the tables in PostgreSQL
+# Create database tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Smart Campus Assistant")
 
+# Mount the static directory to serve CSS, JS, Images, etc.
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+# Set up Jinja2 templates
+templates = Jinja2Templates(directory="app/templates")
+
+# Include our API routing
 app.include_router(ask_route.router)
 
-@app.get("/")
-def read_root():
-    return {"message": "Smart Campus Assistant is running!"}
+# Serve the web interface on the root URL
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
