@@ -22,3 +22,13 @@ class Facility(Base):
     name = Column(String, index=True, nullable=False)
     location = Column(String, nullable=False)
     status = Column(String, default="Active")
+
+class StaffMember(Base):
+    __tablename__ = "staff_members"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    role = Column(String)  # e.g., "Python Lecturer"
+    office_location = Column(String)
+    office_hours = Column(String)
+    email = Column(String)

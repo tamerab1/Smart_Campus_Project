@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.schemas.ask_schema import AskRequest, AskResponse
 from app.database import get_db
-from app.models.campus import ExamSchedule, Facility
+from app.models.campus import ExamSchedule, Facility, StaffMember
 from app.services.ai_service import generate_campus_response
 import time
 
@@ -11,12 +11,23 @@ router = APIRouter()
 
 def classify_question(question: str) -> str:
     question_lower = question.lower()
-    if "exam" in question_lower or "schedule" in question_lower or "when" in question_lower:
+    
+    # 1. First priority: Check for Staff/Lecturer specific keywords
+    if "professor" in question_lower or "lecturer" in question_lower or "office hours" in question_lower or "email" in question_lower:
+        return "Staff Info"
+        
+    # 2. Second priority: Check for Exams and Schedules
+    elif "exam" in question_lower or "schedule" in question_lower or "when" in question_lower:
         return "Schedule"
+        
+    # 3. Third priority: Technical Issues
     elif "wifi" in question_lower or "broken" in question_lower or "down" in question_lower or "work" in question_lower:
         return "Technical Issue"
+        
+    # 4. Fourth priority: General Info (Rooms, locations)
     elif "where" in question_lower or "library" in question_lower or "room" in question_lower:
         return "General Info"
+        
     else:
         return "Out of Scope"
 
@@ -57,6 +68,22 @@ async def ask_question(request: AskRequest, db: Session = Depends(get_db)):
             answer = await generate_campus_response(request.question, db_context)
         else:
             answer = "I couldn't find information about that specific facility or service."
+    
+    elif category == "Staff Info":
+        question_lower = request.question.lower()
+        
+        if "python" in question_lower:
+            staff = db.query(StaffMember).filter(StaffMember.role.ilike("%python%")).first()
+        elif "sql" in question_lower:
+            staff = db.query(StaffMember).filter(StaffMember.role.ilike("%sql%")).first()
+        else:
+            staff = None
+            
+        if staff:
+            db_context = f"Staff Name: {staff.name}, Role: {staff.role}, Office: {staff.office_location}, Office Hours: {staff.office_hours}, Email: {staff.email}"
+            answer = await generate_campus_response(request.question, db_context)
+        else:
+            answer = "I couldn't find information for that staff member. Please specify if you are looking for the Python or SQL lecturer."
             
     elif category == "General Info":
         question_lower = request.question.lower()
