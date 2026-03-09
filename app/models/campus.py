@@ -32,3 +32,10 @@ class StaffMember(Base):
     office_location = Column(String)
     office_hours = Column(String)
     email = Column(String)
+
+class FAQ(Base):
+    __tablename__ = "faqs"
+    id = Column(Integer, primary_key=True)
+    category = Column(String) # למשל: "Cafeteria", "Registration", "Security"
+    question_topic = Column(String)
+    answer_text = Column(String)

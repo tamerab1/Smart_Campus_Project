@@ -1,41 +1,45 @@
 # app/services/ai_service.py
 import os
-from google import genai
-from google.genai import types
+import google.generativeai as genai
+from dotenv import load_dotenv
 
-# Fetch API key securely from .env
-api_key = os.getenv("GEMINI_API_KEY")
-if not api_key:
-    raise ValueError("GEMINI_API_KEY is missing from the environment variables.")
+load_dotenv()
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Initialize the new standard client
-client = genai.Client(api_key=api_key)
+# Using the standard model for text generation
+model = genai.GenerativeModel('gemini-2.5-pro')
 
-async def generate_campus_response(question: str, db_context: str) -> str:
-    """
-    Constructs a prompt with the campus context and sends it to Gemini using the new SDK.
-    """
-    system_instruction = f"""
-    You are the 'Smart Campus Assistant', a helpful and concise AI for students.
-    Answer the student's question using ONLY the provided Database Context.
-    If the answer is not in the context, politely state that you do not have that information.
-    Keep the answer friendly and short.
+async def generate_campus_response(question: str, db_context: str, history: list = None):
+    # Format the history into the prompt if it exists
+    history_prompt = ""
+    if history:
+        history_prompt = "Previous Conversation Context:\n"
+        # Keep only the last 4 messages so the prompt doesn't get too long
+        for msg in history[-4:]:
+            history_prompt += f"{msg.role.capitalize()}: {msg.content}\n"
 
-    Database Context:
+    prompt = f"""You are a helpful Smart Campus Assistant.
+    Answer the student's question naturally based ONLY on the provided Database Information.
+    If the database context is missing, use the Previous Conversation Context to understand what the user is referring to.
+
+    {history_prompt}
+    
+    Database Information:
     {db_context}
+    
+    Student Question: {question}
     """
     
-    try:
-        # Non-blocking async call using the updated fast model
-        response = await client.aio.models.generate_content(
-            model='gemini-2.5-flash', # Updated to the current available model
-            contents=question,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-            )
-        )
-        return response.text.strip()
-    except Exception as e:
-        print(f"AI Service Error: {e}")
-        # Graceful fallback if API fails
-        return "The AI service is currently unavailable. Please try again later."
+    response = model.generate_content(prompt)
+    return response.text
+
+async def get_ai_category(question: str) -> str:
+    prompt = f"""You are a smart router. Classify the user question into ONE of these categories:
+    'Schedule', 'Technical Issue', 'Staff Info', 'General Info'.
+    If the question is irrelevant, return 'Out of Scope'.
+    
+    Question: "{question}"
+    Respond with ONLY the category name. No quotes, no extra text."""
+    
+    response = model.generate_content(prompt)
+    return response.text.strip()

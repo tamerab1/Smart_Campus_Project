@@ -1,7 +1,7 @@
 # seed_db.py
 from sqlalchemy.orm import Session
 from app.database import engine, Base, SessionLocal
-from app.models.campus import ExamSchedule, Facility, StaffMember
+from app.models.campus import ExamSchedule, Facility, StaffMember, FAQ
 from datetime import datetime
 
 # Create tables if they don't exist
@@ -15,6 +15,7 @@ def seed_data():
         db.query(ExamSchedule).delete()
         db.query(Facility).delete()
         db.query(StaffMember).delete()
+        db.query(FAQ).delete()
         
         # 1. Seed Exams
         exam1 = ExamSchedule(course_name="Introduction to Python", exam_date=datetime(2026, 2, 20, 14, 0), room_number="101")
@@ -27,7 +28,12 @@ def seed_data():
         fac3 = Facility(name="Room 102", location="Floor 1, near main entrance", status="Active")
         db.add_all([fac1, fac2, fac3])
 
-        # 3. Seed Staff Members
+        # 3. Seed FAQ
+        faq1 = FAQ(category="Cafeteria", question_topic="Opening hours", answer_text="The cafeteria is open Sunday-Thursday, 08:00-18:00.")
+        faq2 = FAQ(category="Registration", question_topic="How to register", answer_text="You can register via the student portal under 'My Courses' tab.")
+        db.add_all([faq1, faq2])
+
+        # 4. Seed Staff Members
         staff1 = StaffMember(
             name="Dr. Alice Smith", 
             role="Python Lecturer", 

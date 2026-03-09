@@ -1,10 +1,16 @@
-from pydantic import BaseModel, Field
+# app/schemas/ask_schema.py
+from pydantic import BaseModel
+from typing import List, Optional
+
+class MessageHistory(BaseModel):
+    role: str
+    content: str
 
 class AskRequest(BaseModel):
-    # Validating that the question is at least 3 characters long
-    question: str = Field(..., min_length=3, description="The student's campus-related query")
+    question: str
+    history: Optional[List[MessageHistory]] = []
 
 class AskResponse(BaseModel):
     answer: str
     category: str
-    response_time: str = None
+    response_time: str
