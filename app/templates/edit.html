@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <h2>Edit {{ current_table | title }}</h2>
+    <form action="/admin/{{ current_table }}/update/{{ item.id }}" method="POST">
+        
+        {% if current_table == 'faq' %}
+            <label style="font-weight: 600; font-size: 14px;">Category</label>
+            <input type="text" name="category" value="{{ item.category }}" required>
+            
+            <label style="font-weight: 600; font-size: 14px;">Question Topic</label>
+            <input type="text" name="question" value="{{ item.question_topic }}" required>
+            
+            <label style="font-weight: 600; font-size: 14px;">Answer</label>
+            <textarea name="answer" required>{{ item.answer_text }}</textarea>
+
+        {% elif current_table == 'staff' %}
+            <label style="font-weight: 600; font-size: 14px;">Full Name</label>
+            <input type="text" name="name" value="{{ item.name }}" required>
+            
+            <label style="font-weight: 600; font-size: 14px;">Role</label>
+            <input type="text" name="role" value="{{ item.role }}" required>
+            
+            <label style="font-weight: 600; font-size: 14px;">Email</label>
+            <input type="email" name="email" value="{{ item.email }}" required>
+            
+            <label style="font-weight: 600; font-size: 14px;">Office Location</label>
+            <input type="text" name="office_location" value="{{ item.office_location }}">
+            
+            <label style="font-weight: 600; font-size: 14px;">Office Hours</label>
+            <input type="text" name="office_hours" value="{{ item.office_hours }}">
+
+        {% elif current_table == 'facility' %}
+            <label style="font-weight: 600; font-size: 14px;">Facility Name</label>
+            <input type="text" name="name" value="{{ item.name }}" required>
+            
+            <label style="font-weight: 600; font-size: 14px;">Location</label>
+            <input type="text" name="location" value="{{ item.location }}" required>
+            
+            <label style="font-weight: 600; font-size: 14px;">Status</label>
+            <select name="status" style="width: 100%; padding: 12px; margin: 8px 0 16px; border: 1px solid var(--border-color); border-radius: 8px;">
+                <option value="Active" {% if item.status == 'Active' %}selected{% endif %}>Active</option>
+                <option value="Maintenance" {% if item.status == 'Maintenance' %}selected{% endif %}>Maintenance</option>
+                <option value="Closed" {% if item.status == 'Closed' %}selected{% endif %}>Closed</option>
+            </select>
+
+        {% elif current_table == 'exam' %}
+            <label style="font-weight: 600; font-size: 14px;">Course Name</label>
+            <input type="text" name="course_name" value="{{ item.course_name }}" required>
+            
+            <label style="font-weight: 600; font-size: 14px;">Exam Date & Time</label>
+            <input type="datetime-local" name="exam_date" value="{{ item.exam_date.strftime('%Y-%m-%dT%H:%M') }}" required>
+            
+            <label style="font-weight: 600; font-size: 14px;">Room Number</label>
+            <input type="text" name="room_number" value="{{ item.room_number }}" required>
+        {% endif %}
+        
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="/admin?table={{ current_table }}" class="btn btn-secondary" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border-color);">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

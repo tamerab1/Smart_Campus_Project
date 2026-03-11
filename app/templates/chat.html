@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="chat-wrapper">
+    <div class="chat-container">
+        <div id="chat-box">
+            <div class="message ai">Hello! How can I assist you with your campus queries today?</div>
+        </div>
+        
+        <form class="input-area" id="chat-form">
+            <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off" required>
+            <button type="submit" class="btn btn-primary">Send</button>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+    document.getElementById('chat-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = document.getElementById('user-input');
+        const chatBox = document.getElementById('chat-box');
+        
+        if(!input.value) return;
+
+        // 1. הוספת הודעת המשתמש
+        const userMsg = input.value;
+        chatBox.insertAdjacentHTML('beforeend', `<div class="message user">${userMsg}</div>`);
+        input.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // 2. יצירת אלמנט "ה-AI חושב..." עם ID ייחודי
+        const typingId = 'typing-' + Date.now();
+        const typingHtml = `
+            <div id="${typingId}" class="message ai typing-indicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>`;
+        chatBox.insertAdjacentHTML('beforeend', typingHtml);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // 3. שליחה לשרת
+        try {
+            const response = await fetch('/ask', { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question: userMsg, history: [] })
+            });
+            const data = await response.json();
+            
+            // 4. מחיקת אנימציית הטעינה
+            document.getElementById(typingId).remove();
+
+            // 5. הפיכת הטקסט מ-Markdown ל-HTML והזרקה
+            // marked.parse הופכת את ה-**bold** וכו' ל-HTML נקי
+            const htmlAnswer = marked.parse(data.answer || "I'm sorry, no response.");
+            chatBox.insertAdjacentHTML('beforeend', `<div class="message ai">${htmlAnswer}</div>`);
+            
+        } catch (err) {
+            document.getElementById(typingId).remove();
+            chatBox.insertAdjacentHTML('beforeend', `<div class="message ai" style="color:var(--danger);">Error connecting to the server.</div>`);
+        }
+        
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
+</script>
+{% endblock %}

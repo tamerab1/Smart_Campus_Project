@@ -1,27 +1,49 @@
-# app/main.py
-from fastapi import FastAPI, Request
-from fastapi.staticfiles import StaticFiles
+# --- Imports ---
+# Gathering all necessary modules for the API and Database
+from fastapi import FastAPI, Depends, HTTPException, Request, Response
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
+from app.core.database import engine, Base
 from app.routes import ask_route
-from app.database import engine, Base
+from app.routes import admin
 import app.models.campus 
 
-# Create database tables
+# --- App Initialization ---
+# Creating the database tables if they don't exist
 Base.metadata.create_all(bind=engine)
-
 app = FastAPI(title="Smart Campus Assistant")
 
-# Mount the static directory to serve CSS, JS, Images, etc.
+app.include_router(admin.router)
+# Mounting static files (CSS/JS) and setting up templates
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-
-# Set up Jinja2 templates
 templates = Jinja2Templates(directory="app/templates")
 
-# Include our API routing
+# --- Security & Auth ---
+# Simple basic auth setup for the admin dashboard
+security = HTTPBasic()
+
+def verify_admin(credentials: HTTPBasicCredentials = Depends(security)):
+    # TODO: Replace hardcoded credentials with a secure check against the DB
+    if credentials.username != "admin" or credentials.password != "password123":
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized access",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+
+# --- Routes ---
+# Including API router
 app.include_router(ask_route.router)
 
-# Serve the web interface on the root URL
+# Home page
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
+async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
+# Chat interface
+@app.get("/chat", response_class=HTMLResponse)
+async def chat_page(request: Request):
+    return templates.TemplateResponse("chat.html", {"request": request})

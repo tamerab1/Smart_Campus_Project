@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime
-from app.database import Base
+from app.core.database import Base
 
 class ExamSchedule(Base):
     """
@@ -36,6 +36,6 @@ class StaffMember(Base):
 class FAQ(Base):
     __tablename__ = "faqs"
     id = Column(Integer, primary_key=True)
-    category = Column(String) # למשל: "Cafeteria", "Registration", "Security"
+    category = Column(String) # Example: "Cafeteria", "Registration", "Security"
     question_topic = Column(String)
     answer_text = Column(String)

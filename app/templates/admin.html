@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2>Campus Admin Dashboard</h2>
+</div>
+
+<div class="card" style="padding: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+    <a href="/admin?table=faq" class="btn {% if current_table == 'faq' %}btn-primary{% else %}btn-secondary{% endif %}">FAQs</a>
+    <a href="/admin?table=staff" class="btn {% if current_table == 'staff' %}btn-primary{% else %}btn-secondary{% endif %}">Staff Members</a>
+    <a href="/admin?table=facility" class="btn {% if current_table == 'facility' %}btn-primary{% else %}btn-secondary{% endif %}">Facilities</a>
+    <a href="/admin?table=exam" class="btn {% if current_table == 'exam' %}btn-primary{% else %}btn-secondary{% endif %}">Exam Schedules</a>
+</div>
+
+<div class="card">
+    <h3>Add New {{ current_table | title }}</h3>
+    
+    {% if current_table == 'faq' %}
+    <form action="/admin/faq/add" method="POST">
+        <input type="text" name="category" placeholder="Category (e.g., IT, Admissions)" required>
+        <input type="text" name="question" placeholder="Question Topic" required>
+        <textarea name="answer" placeholder="Detailed Answer..." required></textarea>
+        <button type="submit" class="btn btn-primary">Publish FAQ</button>
+    </form>
+    
+    {% elif current_table == 'staff' %}
+    <form action="/admin/staff/add" method="POST">
+        <input type="text" name="name" placeholder="Full Name" required>
+        <input type="text" name="role" placeholder="Role (e.g., Python Lecturer)" required>
+        <input type="email" name="email" placeholder="Email Address" required>
+        <input type="text" name="office_location" placeholder="Office Location">
+        <input type="text" name="office_hours" placeholder="Office Hours">
+        <button type="submit" class="btn btn-primary">Add Staff Member</button>
+    </form>
+
+    {% elif current_table == 'facility' %}
+    <form action="/admin/facility/add" method="POST">
+        <input type="text" name="name" placeholder="Facility Name (e.g., Main Library)" required>
+        <input type="text" name="location" placeholder="Location" required>
+        <select name="status" style="width: 100%; padding: 12px; margin: 8px 0 16px; border: 1px solid var(--border-color); border-radius: 8px;">
+            <option value="Active">Active</option>
+            <option value="Maintenance">Maintenance</option>
+            <option value="Closed">Closed</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Add Facility</button>
+    </form>
+
+    {% elif current_table == 'exam' %}
+    <form action="/admin/exam/add" method="POST">
+        <input type="text" name="course_name" placeholder="Course Name" required>
+        <label style="font-size: 14px; font-weight: bold;">Exam Date & Time:</label>
+        <input type="datetime-local" name="exam_date" required>
+        <input type="text" name="room_number" placeholder="Room Number" required>
+        <button type="submit" class="btn btn-primary">Schedule Exam</button>
+    </form>
+    {% endif %}
+</div>
+
+<div class="card" style="padding: 0;">
+    <h3 style="padding: 20px 20px 0 20px;">Existing {{ current_table | title }} Data</h3>
+    <div style="padding: 10px 0;">
+        {% for item in data %}
+            <div class="faq-item">
+                <div style="flex: 1; padding-right: 20px;">
+                    
+                    {% if current_table == 'faq' %}
+                        <span class="tag">{{ item.category }}</span>
+                        <div style="font-weight: 600; margin-top: 5px;">{{ item.question_topic }}</div>
+                        <div style="color: var(--text-muted); font-size: 0.9em;">{{ item.answer_text }}</div>
+                    
+                    {% elif current_table == 'staff' %}
+                        <span class="tag">{{ item.role }}</span>
+                        <div style="font-weight: 600; margin-top: 5px;">{{ item.name }}</div>
+                        <div style="color: var(--text-muted); font-size: 0.9em;">✉️ {{ item.email }} | 📍 {{ item.office_location }}</div>
+                    
+                    {% elif current_table == 'facility' %}
+                        {% if item.status == 'Active' %}
+                            <span class="tag" style="background: #d1fae5; color: #065f46;">{{ item.status }}</span>
+                        {% else %}
+                            <span class="tag" style="background: #fee2e2; color: #991b1b;">{{ item.status }}</span>
+                        {% endif %}
+                        <div style="font-weight: 600; margin-top: 5px;">{{ item.name }}</div>
+                        <div style="color: var(--text-muted); font-size: 0.9em;">📍 {{ item.location }}</div>
+                    
+                    {% elif current_table == 'exam' %}
+                        <span class="tag">Room: {{ item.room_number }}</span>
+                        <div style="font-weight: 600; margin-top: 5px;">{{ item.course_name }}</div>
+                        <div style="color: var(--text-muted); font-size: 0.9em;">📅 {{ item.exam_date.strftime('%d/%m/%Y, %H:%M') }}</div>
+                    {% endif %}
+                    
+                </div>
+                
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <form action="/admin/{{ current_table }}/delete/{{ item.id }}" method="POST" style="margin: 0;">
+                        <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="return confirm('Are you sure you want to delete this record?');">Delete</button>
+                        <a href="/admin/{{ current_table }}/edit/{{ item.id }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">Edit</a>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <div style="padding: 20px; color: var(--text-muted); text-align: center;">No records found in this table.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

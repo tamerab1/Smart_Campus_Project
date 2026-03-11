@@ -1,6 +1,6 @@
 # seed_db.py
 from sqlalchemy.orm import Session
-from app.database import engine, Base, SessionLocal
+from app.core.database import engine, Base, SessionLocal
 from app.models.campus import ExamSchedule, Facility, StaffMember, FAQ
 from datetime import datetime
 
