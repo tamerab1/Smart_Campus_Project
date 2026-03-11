@@ -1,51 +1,86 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Campus Assistant</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f4f7f6;
-        }
-        .container {
-            text-align: center;
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .btn {
-            display: inline-block;
-            margin: 10px;
-            padding: 12px 24px;
-            text-decoration: none;
-            color: white;
-            border-radius: 6px;
-            font-weight: bold;
-            transition: background 0.3s;
-        }
-        .btn-chat { background-color: #007bff; }
-        .btn-admin { background-color: #6c757d; }
-        .btn:hover { opacity: 0.8; }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
 
-    <div class="container">
-        <h1>Welcome to Smart Campus Assistant</h1>
-        <p>Your AI-powered guide for campus life.</p>
-        
-        <a href="/chat" class="btn btn-chat">Start Chatting</a>
-        <a href="/admin" class="btn btn-admin">Admin Dashboard</a>
+{% block content %}
+<style>
+    /* עיצוב ספציפי לדף הפתיחה */
+    .hero-card {
+        background: white;
+        border-radius: 20px;
+        padding: 60px 20px;
+        text-align: center;
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        margin-top: 5vh;
+        border: 1px solid rgba(255,255,255,0.5);
+    }
+    .hero-icon {
+        font-size: 5rem;
+        margin-bottom: 20px;
+        animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+    }
+    .hero-title {
+        font-size: 2.8rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 15px;
+    }
+    .hero-subtitle {
+        font-size: 1.2rem;
+        color: var(--text-muted);
+        max-width: 600px;
+        margin: 0 auto 40px auto;
+        line-height: 1.6;
+    }
+    .hero-btn-group {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+    }
+    .btn-hero-primary {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 14px 32px;
+        border-radius: 30px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-hero-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+    }
+    .btn-hero-secondary {
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+        padding: 14px 32px;
+        border-radius: 30px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.2s;
+    }
+    .btn-hero-secondary:hover {
+        background: #e5e7eb;
+        transform: translateY(-2px);
+    }
+</style>
+
+<div class="hero-card">
+    <div class="hero-icon">🏫🤖</div>
+    <h1 class="hero-title">Welcome to Smart Campus</h1>
+    <p class="hero-subtitle">
+        Your AI-powered guide for campus life. Instantly find exam schedules, report technical issues, and get answers to your everyday questions in a snap.
+    </p>
+    
+    <div class="hero-btn-group">
+        <a href="/chat" class="btn-hero-primary">💬 Start Chatting</a>
+        <a href="/admin" class="btn-hero-secondary">⚙️ Admin Panel</a>
     </div>
-
-</body>
-</html>
+</div>
+{% endblock %}

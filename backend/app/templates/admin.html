@@ -1,104 +1,157 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+<div id="admin-lock-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); z-index: 9999; align-items: center; justify-content: center; flex-direction: column; color: white; font-family: 'Poppins', sans-serif;">
+    <div style="background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 25px rgba(0,0,0,0.2); text-align: center; width: 90%; max-width: 400px; color: #1f2937;">
+        <div style="font-size: 3rem; margin-bottom: 20px;">🔐</div>
+        <h2 style="margin-bottom: 10px;">Admin Access</h2>
+        <p style="color: #6b7280; margin-bottom: 25px;">Please enter the administrator password to continue.</p>
+        
+        <input type="password" id="admin-pass-input" placeholder="Enter Password" style="width: 100%; padding: 14px; border-radius: 25px; border: 1px solid #d1d5db; margin-bottom: 20px; text-align: center; font-size: 1rem;">
+        
+        <button onclick="checkAdminPassword()" class="btn btn-primary" style="width: 100%; border-radius: 25px; padding: 14px; font-size: 1rem; cursor: pointer;">Unlock Dashboard</button>
+        
+        <p id="lock-error-msg" style="color: #ef4444; margin-top: 15px; font-size: 0.85rem; display: none;">❌ Incorrect password. Access denied.</p>
+        
+        <a href="/" style="display: block; margin-top: 20px; color: #4f46e5; text-decoration: none; font-size: 0.9rem; font-weight: 500;">← Back to Home</a>
+    </div>
+</div>
+
+<script>
+    // בדיקת הרשאות מיידית - מונע הבהוב כחול במעבר בין טבלאות
+    (function() {
+        const isAuthenticated = sessionStorage.getItem('admin_authenticated');
+        const referrer = document.referrer;
+        const comingFromAdmin = referrer.includes('/admin');
+
+        if (isAuthenticated === 'true' && comingFromAdmin) {
+            // המשתמש כבר בפנים ומנווט באדמין - אל תראה את המסך
+            document.write('<style>#admin-lock-screen { display: none !important; }</style>');
+        } else {
+            // כניסה חדשה או הגעה מבחוץ - הצג את מסך הנעילה
+            sessionStorage.removeItem('admin_authenticated');
+            document.write('<style>#admin-lock-screen { display: flex !important; }</style>');
+        }
+    })();
+
+    function checkAdminPassword() {
+        const passwordField = document.getElementById('admin-pass-input');
+        const errorMsg = document.getElementById('lock-error-msg');
+        
+        if (passwordField.value === 'admin123') {
+            document.getElementById('admin-lock-screen').style.setProperty('display', 'none', 'important');
+            sessionStorage.setItem('admin_authenticated', 'true');
+        } else {
+            errorMsg.style.display = 'block';
+            passwordField.style.borderColor = '#ef4444';
+        }
+    }
+
+    document.getElementById('admin-pass-input')?.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') checkAdminPassword();
+    });
+</script>
+
+<style>
+    .admin-header { margin-bottom: 25px; }
+    .admin-header h2 { margin: 0; color: var(--text-main); font-size: 2rem; }
+    .tabs-container { display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
+    .tab-btn { flex: 1; min-width: 120px; text-align: center; padding: 12px; font-weight: 500; background: white; color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 8px; text-decoration: none; transition: 0.2s; }
+    .tab-btn:hover { background: #f8fafc; }
+    .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 6px rgba(79, 70, 229, 0.15); }
+    .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 30px; border: 1px solid var(--border-color); }
+    .card h3 { margin-top: 0; color: var(--primary); margin-bottom: 20px; border-bottom: 2px solid var(--bg-main); padding-bottom: 10px; }
+    .form-group { margin-bottom: 5px; }
+    .list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border-color); }
+    .list-item:last-child { border-bottom: none; }
+    .item-details { flex: 1; padding-right: 20px; }
+    .item-actions { display: flex; gap: 10px; }
+    .cat-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; background: #e0e7ff; color: #3730a3; margin-bottom: 5px; }
+</style>
+
+<div class="admin-header">
     <h2>Campus Admin Dashboard</h2>
 </div>
 
-<div class="card" style="padding: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
-    <a href="/admin?table=faq" class="btn {% if current_table == 'faq' %}btn-primary{% else %}btn-secondary{% endif %}">FAQs</a>
-    <a href="/admin?table=staff" class="btn {% if current_table == 'staff' %}btn-primary{% else %}btn-secondary{% endif %}">Staff Members</a>
-    <a href="/admin?table=facility" class="btn {% if current_table == 'facility' %}btn-primary{% else %}btn-secondary{% endif %}">Facilities</a>
-    <a href="/admin?table=exam" class="btn {% if current_table == 'exam' %}btn-primary{% else %}btn-secondary{% endif %}">Exam Schedules</a>
+<div class="tabs-container">
+    <a href="/admin?table=faq" class="tab-btn {% if current_table == 'faq' %}active{% endif %}">FAQs</a>
+    <a href="/admin?table=staff" class="tab-btn {% if current_table == 'staff' %}active{% endif %}">Staff Members</a>
+    <a href="/admin?table=facility" class="tab-btn {% if current_table == 'facility' %}active{% endif %}">Facilities</a>
+    <a href="/admin?table=exam" class="tab-btn {% if current_table == 'exam' %}active{% endif %}">Exam Schedules</a>
 </div>
 
 <div class="card">
     <h3>Add New {{ current_table | title }}</h3>
-    
     {% if current_table == 'faq' %}
     <form action="/admin/faq/add" method="POST">
-        <input type="text" name="category" placeholder="Category (e.g., IT, Admissions)" required>
-        <input type="text" name="question" placeholder="Question Topic" required>
-        <textarea name="answer" placeholder="Detailed Answer..." required></textarea>
-        <button type="submit" class="btn btn-primary">Publish FAQ</button>
+        <div class="form-group"><input type="text" name="category" placeholder="Category" required></div>
+        <div class="form-group"><input type="text" name="question" placeholder="Question Topic" required></div>
+        <div class="form-group"><textarea name="answer" placeholder="Detailed Answer..." required></textarea></div>
+        <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Publish FAQ</button>
     </form>
-    
     {% elif current_table == 'staff' %}
     <form action="/admin/staff/add" method="POST">
-        <input type="text" name="name" placeholder="Full Name" required>
-        <input type="text" name="role" placeholder="Role (e.g., Python Lecturer)" required>
-        <input type="email" name="email" placeholder="Email Address" required>
-        <input type="text" name="office_location" placeholder="Office Location">
-        <input type="text" name="office_hours" placeholder="Office Hours">
-        <button type="submit" class="btn btn-primary">Add Staff Member</button>
+        <div class="form-group"><input type="text" name="name" placeholder="Full Name" required></div>
+        <div class="form-group"><input type="text" name="role" placeholder="Role" required></div>
+        <div class="form-group"><input type="email" name="email" placeholder="Email" required></div>
+        <div class="form-group"><input type="text" name="office_location" placeholder="Office Location"></div>
+        <div class="form-group"><input type="text" name="office_hours" placeholder="Office Hours"></div>
+        <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Add Staff Member</button>
     </form>
-
     {% elif current_table == 'facility' %}
     <form action="/admin/facility/add" method="POST">
-        <input type="text" name="name" placeholder="Facility Name (e.g., Main Library)" required>
-        <input type="text" name="location" placeholder="Location" required>
-        <select name="status" style="width: 100%; padding: 12px; margin: 8px 0 16px; border: 1px solid var(--border-color); border-radius: 8px;">
-            <option value="Active">Active</option>
-            <option value="Maintenance">Maintenance</option>
-            <option value="Closed">Closed</option>
-        </select>
-        <button type="submit" class="btn btn-primary">Add Facility</button>
+        <div class="form-group"><input type="text" name="name" placeholder="Facility Name" required></div>
+        <div class="form-group"><input type="text" name="location" placeholder="Location" required></div>
+        <div class="form-group">
+            <select name="status">
+                <option value="Active">Active</option>
+                <option value="Maintenance">Maintenance</option>
+                <option value="Closed">Closed</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Add Facility</button>
     </form>
-
     {% elif current_table == 'exam' %}
     <form action="/admin/exam/add" method="POST">
-        <input type="text" name="course_name" placeholder="Course Name" required>
-        <label style="font-size: 14px; font-weight: bold;">Exam Date & Time:</label>
-        <input type="datetime-local" name="exam_date" required>
-        <input type="text" name="room_number" placeholder="Room Number" required>
-        <button type="submit" class="btn btn-primary">Schedule Exam</button>
+        <div class="form-group"><input type="text" name="course_name" placeholder="Course Name" required></div>
+        <div class="form-group"><label>Exam Date & Time:</label><input type="datetime-local" name="exam_date" required></div>
+        <div class="form-group"><input type="text" name="room_number" placeholder="Room Number" required></div>
+        <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Schedule Exam</button>
     </form>
     {% endif %}
 </div>
 
-<div class="card" style="padding: 0;">
-    <h3 style="padding: 20px 20px 0 20px;">Existing {{ current_table | title }} Data</h3>
-    <div style="padding: 10px 0;">
+<div class="card">
+    <h3>Existing {{ current_table | title }} Data</h3>
+    <div>
         {% for item in data %}
-            <div class="faq-item">
-                <div style="flex: 1; padding-right: 20px;">
-                    
+            <div class="list-item">
+                <div class="item-details">
                     {% if current_table == 'faq' %}
-                        <span class="tag">{{ item.category }}</span>
-                        <div style="font-weight: 600; margin-top: 5px;">{{ item.question_topic }}</div>
+                        <span class="cat-badge">{{ item.category }}</span>
+                        <div style="font-weight: 600; font-size: 1.1rem;">{{ item.question_topic }}</div>
                         <div style="color: var(--text-muted); font-size: 0.9em;">{{ item.answer_text }}</div>
-                    
                     {% elif current_table == 'staff' %}
-                        <span class="tag">{{ item.role }}</span>
-                        <div style="font-weight: 600; margin-top: 5px;">{{ item.name }}</div>
-                        <div style="color: var(--text-muted); font-size: 0.9em;">✉️ {{ item.email }} | 📍 {{ item.office_location }}</div>
-                    
+                        <span class="cat-badge">{{ item.role }}</span>
+                        <div style="font-weight: 600; font-size: 1.1rem;">{{ item.name }}</div>
+                        <div style="color: var(--text-muted); font-size: 0.9em;">✉️ {{ item.email }}</div>
                     {% elif current_table == 'facility' %}
-                        {% if item.status == 'Active' %}
-                            <span class="tag" style="background: #d1fae5; color: #065f46;">{{ item.status }}</span>
-                        {% else %}
-                            <span class="tag" style="background: #fee2e2; color: #991b1b;">{{ item.status }}</span>
-                        {% endif %}
-                        <div style="font-weight: 600; margin-top: 5px;">{{ item.name }}</div>
+                        <span class="cat-badge">{{ item.status }}</span>
+                        <div style="font-weight: 600; font-size: 1.1rem;">{{ item.name }}</div>
                         <div style="color: var(--text-muted); font-size: 0.9em;">📍 {{ item.location }}</div>
-                    
                     {% elif current_table == 'exam' %}
-                        <span class="tag">Room: {{ item.room_number }}</span>
-                        <div style="font-weight: 600; margin-top: 5px;">{{ item.course_name }}</div>
+                        <span class="cat-badge">Room: {{ item.room_number }}</span>
+                        <div style="font-weight: 600; font-size: 1.1rem;">{{ item.course_name }}</div>
                         <div style="color: var(--text-muted); font-size: 0.9em;">📅 {{ item.exam_date.strftime('%d/%m/%Y, %H:%M') }}</div>
                     {% endif %}
-                    
                 </div>
-                
-                <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="item-actions">
+                    <a href="/admin/{{ current_table }}/edit/{{ item.id }}" class="btn btn-secondary">Edit</a>
                     <form action="/admin/{{ current_table }}/delete/{{ item.id }}" method="POST" style="margin: 0;">
-                        <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="return confirm('Are you sure you want to delete this record?');">Delete</button>
-                        <a href="/admin/{{ current_table }}/edit/{{ item.id }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">Edit</a>
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Delete?');">Delete</button>
                     </form>
                 </div>
             </div>
-        {% else %}
-            <div style="padding: 20px; color: var(--text-muted); text-align: center;">No records found in this table.</div>
         {% endfor %}
     </div>
 </div>

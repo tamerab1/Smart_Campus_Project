@@ -1,12 +1,88 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    /* עיצוב לכפתורים המהירים ותגיות הקטגוריה */
+    .quick-prompts {
+        display: flex;
+        gap: 8px;
+        padding: 10px 15px;
+        background: white;
+        border-top: 1px solid var(--border-color);
+        overflow-x: auto;
+    }
+    .quick-btn {
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        border-radius: 20px;
+        padding: 5px 12px;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+    .quick-btn:hover {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+    .cat-badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: bold;
+        padding: 3px 8px;
+        border-radius: 4px;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+    }
+    .badge-technical { background-color: #fee2e2; color: #991b1b; }
+    .badge-schedule { background-color: #e0e7ff; color: #3730a3; }
+    .badge-general { background-color: #d1fae5; color: #065f46; }
+    .badge-out { background-color: #f3f4f6; color: #374151; }
+
+    /* מבנה חדש לשורות ההודעה ואווטרים */
+    .message-row { 
+        display: flex; 
+        align-items: flex-end; 
+        gap: 10px; 
+        max-width: 85%; 
+    }
+    .message-row.user { 
+        align-self: flex-end; 
+        flex-direction: row-reverse; 
+    }
+    .message-row.ai { 
+        align-self: flex-start; 
+    }
+    .avatar { 
+        font-size: 1.5rem; 
+        background: white; 
+        border-radius: 50%; 
+        padding: 5px; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        line-height: 1;
+    }
+    .markdown-body p { margin: 0 0 5px 0; }
+    .markdown-body p:last-child { margin: 0; }
+</style>
+
 <div class="chat-wrapper">
     <div class="chat-container">
         <div id="chat-box">
-            <div class="message ai">Hello! How can I assist you with your campus queries today?</div>
+            <div class="message-row ai">
+                <div class="avatar">🤖</div>
+                <div class="message ai">Hello! How can I assist you with your campus queries today?</div>
+            </div>
         </div>
         
+        <div class="quick-prompts">
+            <button class="quick-btn" onclick="sendQuickPrompt('מתי המבחן בפייתון?')">מתי המבחן בפייתון?</button>
+            <button class="quick-btn" onclick="sendQuickPrompt('Where is the main library?')">Where is the main library?</button>
+            <button class="quick-btn" onclick="sendQuickPrompt('השרת נפל לי במעבדה')">השרת נפל לי במעבדה</button>
+            <button class="quick-btn" onclick="sendQuickPrompt('Are there any empty rooms right now?')">Are there any empty rooms?</button>
+        </div>
+
         <form class="input-area" id="chat-form">
             <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off" required>
             <button type="submit" class="btn btn-primary">Send</button>
@@ -17,6 +93,12 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 <script>
+    // פונקציה לשליחה מהירה מהכפתורים
+    function sendQuickPrompt(text) {
+        document.getElementById('user-input').value = text;
+        document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+    }
+
     document.getElementById('chat-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const input = document.getElementById('user-input');
@@ -24,19 +106,27 @@
         
         if(!input.value) return;
 
-        // 1. הוספת הודעת המשתמש
+        // 1. הוספת הודעת המשתמש עם אווטר הסטודנט
         const userMsg = input.value;
-        chatBox.insertAdjacentHTML('beforeend', `<div class="message user">${userMsg}</div>`);
+        chatBox.insertAdjacentHTML('beforeend', `
+            <div class="message-row user">
+                <div class="avatar">🎓</div>
+                <div class="message user">${userMsg}</div>
+            </div>
+        `);
         input.value = '';
         chatBox.scrollTop = chatBox.scrollHeight;
 
-        // 2. יצירת אלמנט "ה-AI חושב..." עם ID ייחודי
+        // 2. יצירת אלמנט "ה-AI חושב..." עם ID ייחודי ואווטר הרובוט
         const typingId = 'typing-' + Date.now();
         const typingHtml = `
-            <div id="${typingId}" class="message ai typing-indicator">
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
+            <div id="${typingId}" class="message-row ai">
+                <div class="avatar">🤖</div>
+                <div class="message ai typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
             </div>`;
         chatBox.insertAdjacentHTML('beforeend', typingHtml);
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -53,14 +143,36 @@
             // 4. מחיקת אנימציית הטעינה
             document.getElementById(typingId).remove();
 
-            // 5. הפיכת הטקסט מ-Markdown ל-HTML והזרקה
-            // marked.parse הופכת את ה-**bold** וכו' ל-HTML נקי
+            // קביעת צבע התגית לפי הקטגוריה שהשרת החזיר
+            let badgeClass = "badge-general";
+            const cat = (data.category || "").toLowerCase();
+            if (cat.includes("tech")) badgeClass = "badge-technical";
+            else if (cat.includes("sched")) badgeClass = "badge-schedule";
+            else if (cat.includes("out")) badgeClass = "badge-out";
+
+            // יצירת ה-HTML של התגית
+            const categoryBadge = data.category ? `<div class="cat-badge ${badgeClass}">${data.category}</div><br>` : '';
+
+            // 5. הפיכת הטקסט מ-Markdown ל-HTML והזרקה עם התגית והאווטר
             const htmlAnswer = marked.parse(data.answer || "I'm sorry, no response.");
-            chatBox.insertAdjacentHTML('beforeend', `<div class="message ai">${htmlAnswer}</div>`);
+            chatBox.insertAdjacentHTML('beforeend', `
+                <div class="message-row ai">
+                    <div class="avatar">🤖</div>
+                    <div class="message ai">
+                        ${categoryBadge}
+                        <div class="markdown-body">${htmlAnswer}</div>
+                    </div>
+                </div>
+            `);
             
         } catch (err) {
             document.getElementById(typingId).remove();
-            chatBox.insertAdjacentHTML('beforeend', `<div class="message ai" style="color:var(--danger);">Error connecting to the server.</div>`);
+            chatBox.insertAdjacentHTML('beforeend', `
+                <div class="message-row ai">
+                    <div class="avatar">🤖</div>
+                    <div class="message ai" style="color:var(--danger);">Error connecting to the server.</div>
+                </div>
+            `);
         }
         
         chatBox.scrollTop = chatBox.scrollHeight;

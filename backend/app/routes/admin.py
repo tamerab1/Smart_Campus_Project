@@ -3,16 +3,15 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session
 from datetime import datetime
-from app.core.auth import verify_admin
+# הסרנו את ה-import של verify_admin כי ההגנה עברה ל-Frontend
 from app.core.database import get_db
 from app.models.campus import FAQ, StaffMember, Facility, ExamSchedule
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
 
-@router.get("/", dependencies=[Depends(verify_admin)], response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 async def admin_dashboard(request: Request, table: str = "faq", db: Session = Depends(get_db)):
-   
     data = []
     if table == "faq":
         data = db.query(FAQ).all()
@@ -30,62 +29,60 @@ async def admin_dashboard(request: Request, table: str = "faq", db: Session = De
     })
 
 # --- Routes for FAQ ---
-@router.post("/faq/add", dependencies=[Depends(verify_admin)])
+@router.post("/faq/add")
 async def add_faq(category: str = Form(...), question: str = Form(...), answer: str = Form(...), db: Session = Depends(get_db)):
     db.add(FAQ(category=category, question_topic=question, answer_text=answer))
     db.commit()
     return RedirectResponse(url="/admin?table=faq", status_code=303)
 
-@router.post("/faq/delete/{item_id}", dependencies=[Depends(verify_admin)])
+@router.post("/faq/delete/{item_id}")
 async def delete_faq(item_id: int, db: Session = Depends(get_db)):
     db.query(FAQ).filter(FAQ.id == item_id).delete()
     db.commit()
     return RedirectResponse(url="/admin?table=faq", status_code=303)
 
 # --- Routes for Staff Members ---
-@router.post("/staff/add", dependencies=[Depends(verify_admin)])
+@router.post("/staff/add")
 async def add_staff(name: str = Form(...), role: str = Form(...), email: str = Form(...), office_location: str = Form(""), office_hours: str = Form(""), db: Session = Depends(get_db)):
     db.add(StaffMember(name=name, role=role, email=email, office_location=office_location, office_hours=office_hours))
     db.commit()
     return RedirectResponse(url="/admin?table=staff", status_code=303)
 
-@router.post("/staff/delete/{item_id}", dependencies=[Depends(verify_admin)])
+@router.post("/staff/delete/{item_id}")
 async def delete_staff(item_id: int, db: Session = Depends(get_db)):
     db.query(StaffMember).filter(StaffMember.id == item_id).delete()
     db.commit()
     return RedirectResponse(url="/admin?table=staff", status_code=303)
 
 # --- Routes for Facilities ---
-@router.post("/facility/add", dependencies=[Depends(verify_admin)])
+@router.post("/facility/add")
 async def add_facility(name: str = Form(...), location: str = Form(...), status: str = Form("Active"), db: Session = Depends(get_db)):
     db.add(Facility(name=name, location=location, status=status))
     db.commit()
     return RedirectResponse(url="/admin?table=facility", status_code=303)
 
-@router.post("/facility/delete/{item_id}", dependencies=[Depends(verify_admin)])
+@router.post("/facility/delete/{item_id}")
 async def delete_facility(item_id: int, db: Session = Depends(get_db)):
     db.query(Facility).filter(Facility.id == item_id).delete()
     db.commit()
     return RedirectResponse(url="/admin?table=facility", status_code=303)
 
 # --- Routes for Exam Schedules ---
-@router.post("/exam/add", dependencies=[Depends(verify_admin)])
+@router.post("/exam/add")
 async def add_exam(course_name: str = Form(...), exam_date: str = Form(...), room_number: str = Form(...), db: Session = Depends(get_db)):
-    # ממיר את התאריך שמגיע מהטופס לאובייקט DateTime
     date_obj = datetime.strptime(exam_date, "%Y-%m-%dT%H:%M")
     db.add(ExamSchedule(course_name=course_name, exam_date=date_obj, room_number=room_number))
     db.commit()
     return RedirectResponse(url="/admin?table=exam", status_code=303)
 
-@router.post("/exam/delete/{item_id}", dependencies=[Depends(verify_admin)])
+@router.post("/exam/delete/{item_id}")
 async def delete_exam(item_id: int, db: Session = Depends(get_db)):
     db.query(ExamSchedule).filter(ExamSchedule.id == item_id).delete()
     db.commit()
     return RedirectResponse(url="/admin?table=exam", status_code=303)
 
-@router.get("/{table}/edit/{item_id}", dependencies=[Depends(verify_admin)], response_class=HTMLResponse)
+@router.get("/{table}/edit/{item_id}", response_class=HTMLResponse)
 async def edit_page(table: str, item_id: int, request: Request, db: Session = Depends(get_db)):
-    """טוען את הפריט הספציפי מהטבלה הנכונה לצורך עריכה"""
     item = None
     if table == "faq":
         item = db.query(FAQ).filter(FAQ.id == item_id).first()
@@ -101,9 +98,8 @@ async def edit_page(table: str, item_id: int, request: Request, db: Session = De
         
     return templates.TemplateResponse("edit.html", {"request": request, "item": item, "current_table": table})
 
-@router.post("/{table}/update/{item_id}", dependencies=[Depends(verify_admin)])
+@router.post("/{table}/update/{item_id}")
 async def update_item(table: str, item_id: int, request: Request, db: Session = Depends(get_db)):
-    """מקבל את הטופס ושומר את השינויים במסד הנתונים"""
     form_data = await request.form()
     
     if table == "faq":

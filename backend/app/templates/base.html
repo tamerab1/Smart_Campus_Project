@@ -2,19 +2,28 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Campus Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
-    <style>
-        /* Basic reset for consistent look */
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f8f9fa; }
-        nav { background: #343a40; color: white; padding: 1rem; }
-        .content { padding: 20px; max-width: 900px; margin: auto; }
-    </style>
 </head>
 <body>
-    <nav>Smart Campus Admin Panel</nav>
+    <nav class="navbar">
+        <a href="/" class="nav-brand" style="text-decoration: none;">🎓 Smart Campus</a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/chat">Chat</a>
+            <a href="/admin">Admin</a>
+        </div>
+    </nav>
+    
     <div class="content">
         {% block content %}{% endblock %}
     </div>
+
+    <footer class="app-footer">
+        <p>Designed & Developed with ❤️ by Tamer</p>
+        <small>Smart Campus Assistant © 2026</small>
+    </footer>
 </body>
 </html>
